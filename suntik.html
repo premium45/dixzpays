@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaffPedia - Suntik Sosmed</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --primary-soft: #eef2ff; --dark: #0f172a;
+            --bg: #f8fafc; --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.8); --radius: 16px;
+        }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--dark); overflow-x: hidden; }
+
+        #authContainer { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: radial-gradient(circle at top right, #e0e7ff, transparent), radial-gradient(circle at bottom left, #f5f3ff, transparent); }
+        .auth-form { background: var(--glass); backdrop-filter: blur(10px); padding: 2.5rem; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); width: 100%; max-width: 420px; border: 1px solid rgba(255,255,255,0.5); }
+
+        .sidebar { height: 100vh; width: 280px; position: fixed; left: 0; top: 0; background: var(--white); border-right: 1px solid #e2e8f0; z-index: 1001; transition: 0.4s; transform: translateX(-100%); }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-menu { list-style: none; padding: 1.5rem; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; text-decoration: none; color: #64748b; border-radius: 12px; margin-bottom: 8px; transition: 0.3s; font-weight: 500; }
+        .sidebar-menu a.active { background: var(--primary-soft); color: var(--primary); }
+
+        .navbar { background: var(--glass); backdrop-filter: blur(10px); padding: 0.8rem 0; position: sticky; top: 0; z-index: 999; border-bottom: 1px solid #e2e8f0; }
+        .navbar .container { display: flex; justify-content: space-between; align-items: center; padding: 0 25px; }
+
+        .main-content { padding: 2rem 0; transition: margin-left 0.4s; }
+        .card { background: var(--white); padding: 2rem; border-radius: var(--radius); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 1.5rem; border: 1px solid #f1f5f9; }
+        .section { display: none; }
+        .section.active-section { display: block; }
+
+        .guide-box { margin-bottom: 15px; padding: 12px; background: #fafafa; border-radius: 10px; border: 1px solid #f1f5f9; }
+        .guide-box h4 { color: var(--primary); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .guide-box code { background: #fee2e2; color: #b91c1c; padding: 2px 5px; border-radius: 4px; font-size: 0.85rem; }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; outline: none; }
+        .form-control {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+        .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    outline: none;
+}
+
+/* Biar tombol konfirmasi pesanan lebih solid */
+#submitOrder {
+    border-radius: 12px;
+    padding: 14px;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+.service-item-clean:hover {
+    background-color: #f8fafc;
+    color: var(--primary) !important;
+}
+
+/* Biar scrollbar di daftar layanan kelihatan rapi */
+#customServiceList::-webkit-scrollbar {
+    width: 6px;
+}
+#customServiceList::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: 700; transition: 0.3s; display: block; text-decoration: none; text-align: center; }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .service-list-container { max-height: 350px; overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .service-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .service-item:hover { background: var(--primary-soft); }
+
+        .history-item {
+    word-wrap: break-word; /* Biar teks panjang otomatis turun baris */
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
+.copy-btn {
+    background: #f1f5f9;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--primary);
+    margin-left: 5px;
+    transition: 0.2s;
+}
+
+.copy-btn:hover {
+    background: #e2e8f0;
+}
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 1000; }
+        .overlay.active { display: block; }
+
+        @media (min-width: 769px) { .sidebar { transform: translateX(0); } .main-content, .navbar { margin-left: 280px; } }
+    </style>
+</head>
+<body>
+
+    <div id="authContainer">
+        <div class="auth-form animate__animated animate__zoomIn" id="loginForm">
+            <h2 style="text-align:center; margin-bottom:2rem;">✨ Login DaffPedia</h2>
+            <div class="form-group"><label>Username</label><input type="text" id="loginUsername"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="loginPassword"></div>
+            <button class="btn-primary" id="loginSubmitBtn">Masuk Sekarang</button>
+            <p style="margin-top:1.5rem; text-align:center;">Belum punya akun? <a href="#" id="showRegisterLink" style="color:var(--primary); font-weight:700; text-decoration:none;">Daftar</a></p>
+        </div>
+        <div class="auth-form animate__animated animate__zoomIn" id="registerForm" style="display:none">
+            <h2 style="text-align:center; margin-bottom:2rem;">🚀 Buat Akun</h2>
+            <div class="form-group"><label>Username</label><input type="text" id="registerUsername"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="registerPassword"></div>
+            <div class="form-group">
+    <div class="g-recaptcha" data-sitekey="6LeiaG4sAAAAAKmOOThhCGLLR5DJBtrIHw9ZOsUg"></div>
+</div>
+
+            <button class="btn-primary" id="registerSubmitBtn">Daftar Akun</button>
+            <p style="margin-top:1.5rem; text-align:center;">Sudah punya akun? <a href="#" id="showLoginLink" style="color:var(--primary); font-weight:700; text-decoration:none;">Login</a></p>
+        </div>
+    </div>
+
+    <div id="appContainer" style="display:none">
+        <aside class="sidebar" id="sidebar">
+            <div style="padding: 2rem; border-bottom: 1px solid #f1f5f9;"><h2 style="color: var(--primary);">DaffXOS</h2></div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-section="order"><i class="fas fa-shopping-cart"></i> Buat Pesanan</a></li>
+                <li><a href="#" data-section="guide"><i class="fas fa-info-circle"></i> Contoh Pengisian</a></li>
+                <li><a href="#" data-section="deposit"><i class="fas fa-wallet"></i> Isi Saldo</a></li>
+                <li><a href="#" data-section="check"><i class="fas fa-history"></i> Riwayat</a></li>
+                <li><a href="#" data-section="balance"><i class="fas fa-coins"></i> Cek Saldo</a></li>
+            </ul>
+        </aside>
+        <div class="overlay" id="overlay"></div>
+
+        <nav class="navbar">
+            <div class="container">
+                <button id="toggleSidebar" style="background:none; border:none; font-size:1.5rem; color:var(--primary); cursor:pointer;"><i class="fas fa-bars"></i></button>
+                <div style="font-weight:700;">Halo, <span id="displayUser">User</span> 👋</div>
+                <button id="logoutBtn" style="border:none; background:none; color:#ef4444; font-size:1.4rem; cursor:pointer;"><i class="fas fa-power-off"></i></button>
+            </div>
+        </nav>
+
+        <main class="container main-content" style="padding: 20px 25px;">
+            <div class="animate__animated animate__fadeInDown" style="margin-bottom: 20px;">
+    <a href="https://whatsapp.com/channel/0029VbBa9zJJ3jv3c8KG9t0m" target="_blank" style="text-decoration: none;">
+        <div style="background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; padding: 15px; border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fab fa-whatsapp" style="font-size: 2rem;"></i>
+                <div>
+                    <strong style="display: block; font-size: 1rem;">JOIN WHATSAPP CHANNEL DAFFPEDIA</strong>
+                    <small style="opacity: 0.9;">Dapatkan informasi & promo terbaru di sini!</small>
+                </div>
+            </div>
+            <i class="fas fa-arrow-right"></i>
+        </div>
+    </a>
+</div>
+
+            <section id="orderSection" class="section active-section animate__animated animate__fadeIn">
+                <div class="card" style="border-left: 5px solid #ef4444; background: #fef2f2; padding: 15px; margin-bottom: 20px;">
+    <h4 style="color: #b91c1c; margin-bottom: 8px;">
+        <i class="fas fa-exclamation-triangle"></i> PERINGATAN PENTING!
+    </h4>
+    <p style="font-size: 0.85rem; color: #b91c1c; line-height: 1.5; font-weight: 600;">
+        Bila ada kesalahan input target pemesanan, <strong>DaffPedia</strong> tidak bertanggung jawab dikarenakan itu kesalahan yang dilakukan oleh pengguna. Pastikan link atau username sudah benar sebelum konfirmasi.
+    </p>
+                </div>
+    <div class="card">
+        <h3>🔥 Pesan Layanan</h3>
+        
+        <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; white-space: nowrap; scrollbar-width: none;">
+            <button onclick="quickSearch('WhatsApp Channel Member', event)" style="background: #25D366; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                <i class="fab fa-whatsapp"></i> WA Followers
+            </button>
+            <button onclick="quickSearch('TikTok Follower', event)" style="background: #000000; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                <i class="fab fa-tiktok"></i> TikTok Followers
+            </button>
+            <button onclick="quickSearch('Instagram Follower', event)" style="background: #E1306C; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                <i class="fab fa-instagram"></i> IG Followers
+            </button>
+            <button onclick="quickSearch('TikTok Like', event)" style="background: #fe2c55; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-heart"></i> TikTok Likes
+            </button>
+            <button onclick="quickSearch('Instagram Like', event)" style="background: #833AB4; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-heart"></i> IG Likes
+            </button>
+        </div>
+
+      <div class="form-group" style="margin-top:10px; position: relative;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Layanan</label>
+    <input type="text" id="serviceSearch" placeholder="Klik atau ketik untuk pilih layanan..." 
+        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;"
+        autocomplete="off">
+    
+    <div id="customServiceList" style="display: none; position: absolute; width: 100%; max-height: 250px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 999; overflow-y: auto; margin-top: 5px;">
+        </div>
+</div>
+
+
+        <div id="selectedServiceInfo" style="display:none; background:var(--primary-soft); padding:1rem; margin:1rem 0; border-radius:12px;"></div>
+        
+        <div class="form-group">
+            <label>Target (Baca Contoh Pengisian Terlebih Dahulu)</label>
+            <input type="text" id="targetInput" placeholder="Masukkan Link / Username">
+        </div>
+        
+        <div class="form-group">
+            <label>Jumlah</label>
+            <input type="number" id="quantityInput" value="100">
+        </div>
+        
+        <h2 id="priceDisplay" style="text-align:center; color:var(--primary); margin:15px 0">Rp 0</h2>
+        
+        <button id="submitOrder" class="btn-primary" disabled style="width: 100%; border-radius: 12px;">Konfirmasi Pesanan</button>
+    </div>
+</section>
+
+            <section id="guideSection" class="section animate__animated animate__fadeIn">
+       
+    <div class="card">
+    <div class="card" style="margin-top: 20px; font-size: 0.85rem; max-height: 700px; overflow-y: auto;">
+    <h4 style="margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Panduan Pengisian Target</h4>
+    <ul style="list-style: none; padding: 0;">
+        <li style="margin-bottom: 10px;">
+            <b style="color: #000000;">TikTok</b><br>
+            - Followers: Link profile atau username // Contoh: <b>https://tiktok.com/@daffpedia</b><br>
+            - Likes / Views: Link video // Contoh: <b>https://vt.tiktok.com/xxxxx/</b>
+        </li>
+        
+        <li style="margin-bottom: 10px;">
+            <b style="color: #E1306C;">Instagram</b><br>
+            - Followers, Story, Live, Profile Visits: Username tanpa @ // Contoh: <b>daffpedia</b><br>
+            - Likes, Views, Comments, Saves: Link postingan // Contoh: <b>https://www.instagram.com/p/CJLkpdPFjn3/</b><br>
+            - Story: Username // Contoh: <b>daffpedia</b><br>
+            - Reels: Link Reels // Contoh: <b>https://www.instagram.com/reel/C1icn9VNr7B/</b>
+        </li>
+
+        <li style="margin-bottom: 10px;">
+            <b style="color: #FF0000;">Youtube</b><br>
+            - Likes, Views, Shares: Link video // Contoh: <b>https://www.youtube.com/watch?v=LvOFPC-APdo</b><br>
+            - Live Stream: Link live // Contoh: <b>https://www.youtube.com/watch?v=LvOFPC-APdo</b><br>
+            - Subscribers: Link channel // Contoh: <b>https://www.youtube.com/channel/UCAJI0932IUOWDW-WDEW</b>
+        </li>
+
+        <li style="margin-bottom: 10px;">
+            <b style="color: #1877F2;">Facebook</b><br>
+            - Page Likes/Followers: Link fanspage // Contoh: <b>https://www.facebook.com/daffpedia/</b><br>
+            - Post Likes/Video: Link postingan // Contoh: <b>https://www.facebook.com/daffpedia/posts/123124312524321</b><br>
+            - Followers/Friends: Link profile // Contoh: <b>https://www.facebook.com/daffpedia</b><br>
+            - Group Members: Link group
+        </li>
+
+        <li style="margin-bottom: 10px;">
+            <b style="color: #1DA1F2;">Twitter</b><br>
+            - Followers: Username tanpa @ // Contoh: <b>daffpedia</b><br>
+            - Retweet, Favorite: Link tweet // Contoh: <b>https://twitter.com/daffpedia/status/1232131231231312</b>
+        </li>
+
+        <li style="margin-bottom: 10px;">
+            <b style="color: #EE4D2D;">Shopee</b><br>
+            - Followers: Username akun // Contoh: <b>daffpedia</b><br>
+            - Product Likes: Link produk // Contoh: <b>https://shopee.co.id/produk-daffpedia-i.12345678.123456789</b>
+        </li>
+
+        <li style="margin-bottom: 10px;">
+            <b style="color: #42B549;">Tokopedia</b><br>
+            - Followers: Username atau link profile // Contoh: <b>https://www.tokopedia.com/daffpedia</b><br>
+            - Wishlist / Favorite: Link produk // Contoh: <b>https://www.tokopedia.com/daffpedia/produk-keren</b>
+        </li>
+
+        <li>
+            <b style="color: #333;">Website Traffic</b><br>
+            - Website Traffic: Link website // Contoh: <b>https://daffpedia.id</b>
+        </li>
+    </ul>
+</div>
+
+</section>
+
+
+            <section id="checkSection" class="section animate__animated animate__fadeIn">
+                <div class="card"><h3>🔍 Riwayat Pesanan</h3><div id="historyList" style="margin-top:15px"></div></div>
+            </section>
+
+            <section id="depositSection" class="section animate__animated animate__fadeIn">
+    <div class="card">
+        <h3 style="color: #1e293b;"><i class="fas fa-wallet"></i> Top Up Saldo</h3>
+
+        <!-- STATE: FORM INPUT NOMINAL -->
+        <div id="depositFormState">
+            <div style="background: var(--primary-soft); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--primary);">
+                <p style="font-size: 0.85rem;">🔄 Cara baru: Input nominal → Admin kirimkan QRIS → Scan & bayar → Admin konfirmasi → Saldo masuk otomatis!</p>
+            </div>
+
+            <!-- Quick amount buttons -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                <button onclick="setAmount(10000)" style="background:#f0f4ff;border:1px solid var(--primary);color:var(--primary);padding:7px 14px;border-radius:20px;font-size:0.8rem;cursor:pointer;font-weight:600;">Rp 10rb</button>
+                <button onclick="setAmount(25000)" style="background:#f0f4ff;border:1px solid var(--primary);color:var(--primary);padding:7px 14px;border-radius:20px;font-size:0.8rem;cursor:pointer;font-weight:600;">Rp 25rb</button>
+                <button onclick="setAmount(50000)" style="background:#f0f4ff;border:1px solid var(--primary);color:var(--primary);padding:7px 14px;border-radius:20px;font-size:0.8rem;cursor:pointer;font-weight:600;">Rp 50rb</button>
+                <button onclick="setAmount(100000)" style="background:#f0f4ff;border:1px solid var(--primary);color:var(--primary);padding:7px 14px;border-radius:20px;font-size:0.8rem;cursor:pointer;font-weight:600;">Rp 100rb</button>
+            </div>
+
+            <div class="form-group">
+                <label>Nominal Top Up</label>
+                <input type="number" id="qris_amount" class="form-control" placeholder="Contoh: 10000" style="border-radius:12px;padding:12px 16px;">
+            </div>
+            <button onclick="requestTopup()" class="btn-primary" id="requestTopupBtn" style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">
+                <i class="fas fa-qrcode"></i> Request Topup via QRIS
+            </button>
+        </div>
+
+        <!-- STATE: WAITING QRIS (pending) -->
+        <div id="depositWaitingState" style="display:none;text-align:center;">
+            <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:12px;padding:20px;margin-bottom:16px;">
+                <div style="font-size:2.5rem;margin-bottom:10px;">⏳</div>
+                <h4 style="color:#92400e;margin-bottom:6px;">Menunggu Admin</h4>
+                <p style="font-size:0.85rem;color:#92400e;">Tiket topupmu sudah dikirim ke admin. Admin sedang memproses dan akan segera mengirimkan QRIS!</p>
+                <div id="waitingTicketInfo" style="margin-top:12px;font-size:0.8rem;color:#78350f;"></div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;">
+                <button onclick="checkTicketStatus()" style="background:var(--primary);color:white;border:none;padding:9px 18px;border-radius:10px;cursor:pointer;font-size:0.85rem;font-weight:600;">
+                    <i class="fas fa-sync-alt"></i> Cek Status
+                </button>
+                <button onclick="cancelTopupTicket()" style="background:#fee2e2;color:#ef4444;border:1px solid #ef4444;padding:9px 18px;border-radius:10px;cursor:pointer;font-size:0.85rem;font-weight:600;">
+                    <i class="fas fa-times"></i> Batalkan
+                </button>
+            </div>
+        </div>
+
+        <!-- STATE: QRIS RECEIVED (qris_sent) -->
+        <div id="depositQrisState" style="display:none;text-align:center;">
+            <div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:12px;padding:20px;margin-bottom:16px;">
+                <h4 style="color:#15803d;margin-bottom:4px;">✅ QRIS Siap!</h4>
+                <p style="font-size:0.85rem;color:#166534;margin-bottom:16px;">Scan QR di bawah untuk membayar. Setelah bayar, admin akan konfirmasi dan saldo langsung masuk!</p>
+                <div style="display:inline-block;background:white;padding:10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+                    <img id="qrisImage" src="" alt="QRIS" style="max-width:220px;max-height:220px;border-radius:8px;display:block;">
+                </div>
+                <div id="qrisTicketInfo" style="margin-top:12px;font-size:0.82rem;color:#166534;"></div>
+            </div>
+            <p style="font-size:0.78rem;color:#64748b;margin-bottom:12px;">Sudah bayar? Tunggu admin konfirmasi. Saldo masuk otomatis!</p>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <button onclick="checkTicketStatus()" style="background:var(--primary);color:white;border:none;padding:9px 18px;border-radius:10px;cursor:pointer;font-size:0.85rem;font-weight:600;">
+                    <i class="fas fa-sync-alt"></i> Cek Status
+                </button>
+                <a id="qrisDownloadBtn" href="#" download="QRIS-DaffPedia.png" style="background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:9px 18px;border-radius:10px;text-decoration:none;font-size:0.85rem;font-weight:600;">
+                    <i class="fas fa-download"></i> Download QRIS
+                </a>
+            </div>
+        </div>
+
+        <!-- STATE: COMPLETED -->
+        <div id="depositCompletedState" style="display:none;text-align:center;">
+            <div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:12px;padding:24px;">
+                <div style="font-size:3rem;margin-bottom:10px;">🎉</div>
+                <h4 style="color:#15803d;margin-bottom:6px;">Topup Berhasil!</h4>
+                <p style="font-size:0.85rem;color:#166534;" id="completedInfo">Saldo kamu sudah bertambah!</p>
+            </div>
+            <button onclick="resetDepositForm()" class="btn-primary" style="margin-top:14px;max-width:200px;">
+                <i class="fas fa-plus"></i> Topup Lagi
+            </button>
+        </div>
+    </div>
+</section>
+
+
+            <section id="balanceSection" class="section animate__animated animate__fadeIn">
+                <div class="card">
+    <p>Saldo Anda:</p>
+    <h3 id="balanceAmount">Rp 1.000.000</h3>
+    <button onclick="refreshData()" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem;">
+        <i class="fas fa-sync-alt"></i> Refresh Saldo
+    </button>
+</div>
+
+            </section>
+        </main>
+    </div>
+
+   <div id="cs-wrapper" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <div id="cs-menu" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; align-items: flex-end;">
+        <a href="https://t.me/mrdetaill" target="_blank" style="background: #0088cc; color: white; padding: 10px 15px; border-radius: 30px; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <i class="fab fa-telegram-plane"></i> Telegram
+        </a>
+        <a href="https://wa.me/6283824951958" target="_blank" style="background: #25D366; color: white; padding: 10px 15px; border-radius: 30px; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+        </a>
+        <a href="https://whatsapp.com/channel/0029VbBa9zJJ3jv3c8KG9t0m" target="_blank" style="background: #25D366; color: white; padding: 10px 15px; border-radius: 30px; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <i class="fab fa-whatsapp"></i> WhatsApp Channel
+        </a>
+    </div>
+
+    <button onclick="toggleCS()" style="background: #6366f1; color: white; border: none; width: 55px; height: 55px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);">
+        <i id="cs-icon" class="fas fa-headset"></i>
+    </button>
+</div>
+    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<script>
+    /* =========================================
+       1. KONFIGURASI & VARIABEL GLOBAL
+       ========================================= */
+    const PROFIT_PERCENT = 15; 
+    let currentUser = null;
+    let userData = null;
+    let allServices = [];
+    let selectedService = null;
+
+    function notify(type, msg) {
+        if (typeof toastr !== 'undefined') {
+            toastr[type](msg);
+        } else {
+            alert(type.toUpperCase() + ": " + msg);
+        }
+    }
+
+    const formatPrice = (p) => {
+        const angka = parseFloat(p) || 0;
+        return "Rp " + Math.floor(angka).toLocaleString('id-ID');
+    };
+
+    function updateCalc() {
+        if (!selectedService) return;
+        const qty = parseInt($('#quantityInput').val()) || 0;
+        const hargaJual = parseFloat(selectedService.price) * (1 + PROFIT_PERCENT / 100);
+        const total = (hargaJual / 1000) * qty;
+        $('#priceDisplay').text(formatPrice(total));
+    }
+
+    $('#quantityInput').on('input', updateCalc);
+
+    /* =========================================
+       2. API CALL & SESSION
+       ========================================= */
+    async function apiCall(endpoint, data) {
+        try {
+            const res = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint, ...data })
+            });
+            return await res.json();
+        } catch (e) {
+            console.error("[API ERROR]", e);
+            return { status: false, msg: "Koneksi ke server gagal" };
+        }
+    }
+
+    $(document).ready(async function() {
+    const savedUser = localStorage.getItem('daffpedia_user');
+    
+    if (savedUser) {
+        try {
+            const parsedData = JSON.parse(savedUser);
+            currentUser = parsedData.username;
+            userData = parsedData;
+
+            showAppUI();
+
+            await refreshData(); 
+            // Restore tiket topup aktif jika ada
+            setTimeout(checkRestoredTicket, 1000);
+        } catch (e) {
+            localStorage.removeItem('daffpedia_user');
+            $('#authContainer').show();
+        }
+    } else {
+        $('#authContainer').show();
+    }
+});
+
+
+    /* =========================================
+       3. AUTH (LOGIN & REGISTER)
+       ========================================= */
+$('#loginSubmitBtn').click(async function() {
+    const u = $('#loginUsername').val().trim().toLowerCase();
+    const p = $('#loginPassword').val();
+
+    if (!u || !p) return notify('warning', "Isi Username & Password!");
+
+    $(this).prop('disabled', true).text("Mengecek...");
+
+    try {
+        const res = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, password: p })
+        }).then(r => r.json());
+
+if (res.status) {
+    currentUser = u;
+    userData = res.userData;
+    // Simpan data lengkap ke localStorage
+    localStorage.setItem('daffpedia_user', JSON.stringify(res.userData)); 
+    showAppUI(); 
+    notify('success', "Selamat datang kembali!");
+} else {
+            notify('error', res.msg); 
+        }
+    } catch (e) {
+        notify('error', "Gagal terhubung ke server.");
+    } finally {
+        $(this).prop('disabled', false).text("Masuk Sekarang");
+    }
+});
+
+
+$('#registerSubmitBtn').click(async function() {
+    const u = $('#registerUsername').val().trim().toLowerCase();
+    const p = $('#registerPassword').val();
+    const captcha = grecaptcha.getResponse();
+
+    if (!u || !p) return notify('warning', "Isi semua data!");
+    if (!captcha) return notify('warning', "Centang 'I am not a robot' dulu!");
+
+    $(this).prop('disabled', true).text("Memproses...");
+    
+    const res = await apiCall('register', { 
+        username: u, 
+        password: p, 
+        captchaResponse: captcha 
+    });
+
+    if (res.status) {
+        notify('success', "Akun berhasil dibuat!");
+        grecaptcha.reset();
+        $('#registerForm').hide();
+        $('#loginForm').show();
+    } else {
+        notify('error', res.msg);
+        grecaptcha.reset();
+    }
+    $(this).prop('disabled', false).text("Daftar Akun");
+});
+
+
+    /* =========================================
+       4. UI ENGINE
+       ========================================= */
+    function showAppUI() {
+    if (typeof currentUser === 'object') {
+        currentUser = currentUser.username;
+    }
+
+    $('#authContainer').hide(); 
+    $('#appContainer').show(); 
+    
+    $('.user-placeholder').text(currentUser);
+    $('#displayUser').text(currentUser);
+    
+    if (userData) {
+        const saldoFix = userData.saldo || 0;
+        $('#balanceAmount').text(formatPrice(saldoFix));
+    }
+    
+    loadServices();
+}
+
+
+    async function refreshData() {
+        if (!currentUser) return;
+        const res = await apiCall('getUserData', { username: currentUser });
+        if (res.status && res.userData) {
+            userData = res.userData;
+            $('#balanceAmount').text(formatPrice(userData.saldo));
+        }
+    }
+
+    /* =========================================
+      6. LAYANAN & ORDER
+       ========================================= */
+    async function loadServices() {
+        $('#customServiceList').html('<div style="padding:15px; color:gray">Sedang memuat layanan dari pusat...</div>');
+        const res = await apiCall('services', {});
+        
+        if (res.status && res.services) {
+            allServices = res.services;
+            renderServices(allServices);
+            console.log("Layanan berhasil dimuat:", allServices.length);
+        } else {
+            $('#customServiceList').html('<div style="padding:15px; color:red">Gagal memuat layanan. Pastikan API KEY Provider benar.</div>');
+            notify('error', "Gagal mengambil data dari provider.");
+        }
+    }
+
+    function renderServices(list) {
+        let html = '';
+        
+        list.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+
+        list.forEach(s => {
+            const hargaJual = parseFloat(s.price) * (1 + PROFIT_PERCENT / 100);
+            const hargaFormat = `(Rp ${Math.floor(hargaJual).toLocaleString('id-ID')}/K)`;
+            
+            html += `
+                <div class="service-item-clean" onclick="selectServiceClean('${s.id}', '${s.name}', ${s.price})" 
+                    style="padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 0.85rem;">
+                    <b style="color:var(--primary)">${s.id}</b> - ${s.name} 
+                    <span style="color: #64748b; font-weight: bold;">${hargaFormat}</span>
+                </div>
+            `;
+        });
+        
+        $('#customServiceList').html(html || '<div style="padding:15px; color:gray">Layanan tidak ditemukan...</div>');
+    }
+
+    window.quickSearch = (keyword, event) => {
+        if (event) event.stopPropagation();
+        $('#serviceSearch').val(keyword);
+        
+        if (!allServices || allServices.length === 0) {
+            loadServices();
+            return;
+        }
+
+        const filtered = allServices.filter(s => 
+            s.name.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        renderServices(filtered);
+        $('#customServiceList').stop(true, true).fadeIn(200);
+    };
+
+
+    window.selectServiceClean = (id, name, price) => {
+        selectedService = { id, name, price };
+        $('#serviceSearch').val(`${id} - ${name}`);
+        $('#customServiceList').fadeOut(200);
+        $('#submitOrder').prop('disabled', false);
+        updateCalc();
+    };
+
+    $('#serviceSearch').on('focus keyup', function() {
+        const val = $(this).val().toLowerCase();
+        const filtered = allServices.filter(s => s.name.toLowerCase().includes(val) || s.id.toString().includes(val));
+        renderServices(filtered);
+        $('#customServiceList').fadeIn(200);
+    });
+
+$('#submitOrder').click(async function() {
+    const target = $('#targetInput').val();
+    const qty = $('#quantityInput').val();
+  
+    if (!selectedService || !target || !qty) return notify('warning', "Lengkapi data!");
+
+    $(this).prop('disabled', true).text("Memproses...");
+
+    const res = await apiCall('order', {
+        currentUser: currentUser,
+        service: selectedService.id,
+        target: target,
+        quantity: qty
+    });
+
+    if (res.status) {
+        notify('success', "Pesanan Berhasil Diproses!"); 
+        await refreshData(); 
+        
+        $('#targetInput').val('');
+        $('#quantityInput').val('100');
+        
+        $('.sidebar-menu a[data-section="check"]').trigger('click'); 
+    } else {
+        notify('error', res.msg);
+    }
+    
+    $(this).prop('disabled', false).text("Konfirmasi Pesanan");
+});
+
+
+    /* =========================================
+       6. HISTORY & TOPUP
+       ========================================= */
+async function loadHistory() {
+    $('#historyList').html('<div style="text-align:center; padding:20px; color:var(--primary);"><i class="fas fa-spinner fa-spin"></i> Mengecek status...</div>');
+    
+    const res = await apiCall('history', { username: currentUser });
+    
+    if (res.status && res.data && res.data.length > 0) {
+        let html = '';
+        res.data.forEach(o => {
+            let statusColor = '#64748b'; 
+            let statusText = (o.status || 'pending').toUpperCase();
+
+            if (o.status === 'completed' || o.status === 'success') statusColor = '#22c55e'; 
+            if (o.status === 'processing' || o.status === 'pending') statusColor = '#f59e0b';
+            if (o.status === 'canceled' || o.status === 'error') statusColor = '#ef4444';
+            if (o.status === 'partial') statusColor = '#3b82f6';
+
+            html += `
+                <div class="card" style="padding: 15px; margin-bottom: 12px; border-left: 5px solid ${statusColor}; border-radius: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600;">#${o.provider_order_id}</span>
+                        <span style="background: ${statusColor}15; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 800;">
+                            ${statusText}
+                        </span>
+                    </div>
+                    <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 5px;">${o.service_name}</div>
+                    <div style="font-size: 0.75rem; color: #475569; word-break: break-all; margin-bottom: 10px;">Target: ${o.target}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #eee; padding-top: 10px;">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Sisa: ${o.remains || 0}</span>
+                        <span style="font-weight: 800; color: var(--primary);">Rp ${o.price.toLocaleString('id-ID')}</span>
+                    </div>
+                </div>`;
+        });
+        $('#historyList').html(html);
+    } else {
+        $('#historyList').html('<div style="text-align:center; padding:20px; color:gray;">Belum ada pesanan.</div>');
+    }
+}
+
+    $('.sidebar-menu a').click(function(e) {
+        e.preventDefault();
+        const section = $(this).data('section');
+        
+        $('.section').removeClass('active-section');
+        $(`#${section}Section`).addClass('active-section');
+        $('.sidebar-menu a').removeClass('active');
+        $(this).addClass('active');
+        
+        if (section === 'check') loadHistory(); 
+        if (section === 'balance') refreshData();
+        if (section === 'deposit') checkRestoredTicket();
+        
+        if (window.innerWidth < 769) $("#sidebar, #overlay").removeClass("active");
+    });
+
+
+// ==========================================
+// SISTEM TOPUP BARU - QRIS TICKET SYSTEM
+// ==========================================
+
+let topupPollingInterval = null;
+let currentTicketId = null;
+
+function setAmount(amount) {
+    $('#qris_amount').val(amount);
+}
+
+function showDepositState(state) {
+    ['depositFormState', 'depositWaitingState', 'depositQrisState', 'depositCompletedState'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('deposit' + state + 'State').style.display = 'block';
+}
+
+async function requestTopup() {
+    const amount = $('#qris_amount').val();
+    if (!amount || amount < 3000) return notify('error', "Minimal topup Rp 3.000!");
+
+    const btn = document.getElementById('requestTopupBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+    const res = await apiCall('request_topup', { username: currentUser, nominal: amount });
+
+    if (res.status) {
+        currentTicketId = res.ticketId;
+        const nominalStr = parseInt(amount).toLocaleString('id-ID');
+        document.getElementById('waitingTicketInfo').innerHTML = `
+            🎫 Tiket #${res.ticketId} &nbsp;|&nbsp; 💵 Rp ${nominalStr}
+        `;
+        showDepositState('Waiting');
+        notify('success', "Tiket topup dibuat! Admin segera memproses.");
+        localStorage.setItem('daffpedia_active_ticket', res.ticketId);
+        startTicketPolling();
+    } else {
+        notify('error', res.msg);
+        // Cek apakah ada tiket yang sudah ada
+        checkTicketStatus();
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-qrcode"></i> Request Topup via QRIS';
+}
+
+async function checkTicketStatus() {
+    const res = await apiCall('check_topup_ticket', { username: currentUser });
+    if (!res.status) return;
+
+    const ticket = res.ticket;
+
+    if (!ticket) {
+        // Tidak ada tiket aktif
+        stopTicketPolling();
+        localStorage.removeItem('daffpedia_active_ticket');
+        currentTicketId = null;
+        showDepositState('Form');
+        return;
+    }
+
+    currentTicketId = ticket.id;
+    localStorage.setItem('daffpedia_active_ticket', ticket.id);
+
+    if (ticket.status === 'pending') {
+        const nominalStr = Number(ticket.nominal).toLocaleString('id-ID');
+        document.getElementById('waitingTicketInfo').innerHTML = `
+            🎫 Tiket #${ticket.id} &nbsp;|&nbsp; 💵 Rp ${nominalStr}
+        `;
+        showDepositState('Waiting');
+        startTicketPolling();
+    } else if (ticket.status === 'qris_sent') {
+        const nominalStr = Number(ticket.nominal).toLocaleString('id-ID');
+        const img = document.getElementById('qrisImage');
+        img.src = ticket.qris_url;
+        document.getElementById('qrisDownloadBtn').href = ticket.qris_url;
+        document.getElementById('qrisTicketInfo').innerHTML = `
+            🎫 Tiket #${ticket.id} &nbsp;|&nbsp; 💵 <strong>Rp ${nominalStr}</strong>
+        `;
+        showDepositState('Qris');
+        startTicketPolling();
+    } else if (ticket.status === 'completed') {
+        const nominalStr = Number(ticket.nominal).toLocaleString('id-ID');
+        document.getElementById('completedInfo').textContent = `Rp ${nominalStr} berhasil ditambahkan ke akunmu! 🎉`;
+        showDepositState('Completed');
+        stopTicketPolling();
+        localStorage.removeItem('daffpedia_active_ticket');
+        currentTicketId = null;
+        await refreshData(); // refresh saldo
+        notify('success', `Saldo +Rp ${nominalStr} berhasil masuk!`);
+    } else if (ticket.status === 'rejected' || ticket.status === 'cancelled') {
+        stopTicketPolling();
+        localStorage.removeItem('daffpedia_active_ticket');
+        currentTicketId = null;
+        showDepositState('Form');
+        notify('error', `Tiket topup ${ticket.status === 'rejected' ? 'ditolak' : 'dibatalkan'}.`);
+    }
+}
+
+async function cancelTopupTicket() {
+    if (!currentTicketId) return;
+    if (!confirm('Yakin ingin membatalkan tiket topup?')) return;
+
+    const res = await apiCall('cancel_topup_ticket', { username: currentUser, ticketId: currentTicketId });
+    if (res.status) {
+        stopTicketPolling();
+        localStorage.removeItem('daffpedia_active_ticket');
+        currentTicketId = null;
+        showDepositState('Form');
+        notify('success', 'Tiket berhasil dibatalkan.');
+    } else {
+        notify('error', res.msg);
+    }
+}
+
+function resetDepositForm() {
+    $('#qris_amount').val('');
+    showDepositState('Form');
+}
+
+function startTicketPolling() {
+    stopTicketPolling(); // clear existing
+    topupPollingInterval = setInterval(checkTicketStatus, 15000); // check every 15s
+}
+
+function stopTicketPolling() {
+    if (topupPollingInterval) {
+        clearInterval(topupPollingInterval);
+        topupPollingInterval = null;
+    }
+}
+
+// Restore active ticket on page load / section switch
+async function checkRestoredTicket() {
+    const savedTicket = localStorage.getItem('daffpedia_active_ticket');
+    if (savedTicket) {
+        currentTicketId = savedTicket;
+        await checkTicketStatus();
+    }
+}
+
+
+    /* =========================================
+       7. NAVIGASI
+       ========================================= */
+    $('.sidebar-menu a').click(function(e) {
+    e.preventDefault();
+    const section = $(this).data('section');
+    
+    $('.section').removeClass('active-section');
+    $(`#${section}Section`).addClass('active-section');
+    $('.sidebar-menu a').removeClass('active');
+    $(this).addClass('active');
+    
+    if (section === 'balance') refreshData();
+    if (window.innerWidth < 769) $("#sidebar, #overlay").removeClass("active");
+});
+
+
+    $("#toggleSidebar").click(() => $("#sidebar, #overlay").addClass("active"));
+    $("#overlay").click(() => $("#sidebar, #overlay").removeClass("active"));
+    $("#showRegisterLink").click(() => { $("#loginForm").hide(); $("#registerForm").show(); });
+    $("#showLoginLink").click(() => { $("#registerForm").hide(); $("#loginForm").show(); });
+    $('#logoutBtn').click(() => { localStorage.removeItem('daffpedia_user'); location.reload(); });
+    window.toggleCS = () => { $('#cs-menu').fadeToggle(200); $('#cs-icon').toggleClass('fa-headset fa-times'); };
+
+</script>
+
+
+</body>
+</html>
